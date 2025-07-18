@@ -8,8 +8,11 @@ from langchain.text_splitter import (
     TokenTextSplitter,
 )
 from langchain_community.document_loaders import TextLoader
-from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores.chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGSMITH_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
 
 # Define the directory containing the text file
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,13 +26,11 @@ if not os.path.exists(file_path):
     )
 
 # Read the text content from the file
-loader = TextLoader(file_path)
+loader = TextLoader(file_path,encoding="utf-8")
 documents = loader.load()
 
 # Define the embedding model
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-small"
-)  # Update to a valid embedding model if needed
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2") # Update to a valid embedding model if needed
 
 
 # Function to create and persist vector store
@@ -57,43 +58,43 @@ create_vector_store(char_docs, "chroma_db_char")
 # 2. Sentence-based Splitting
 # Splits text into chunks based on sentences, ensuring chunks end at sentence boundaries.
 # Ideal for maintaining semantic coherence within chunks.
-print("\n--- Using Sentence-based Splitting ---")
-sent_splitter = SentenceTransformersTokenTextSplitter(chunk_size=1000)
-sent_docs = sent_splitter.split_documents(documents)
-create_vector_store(sent_docs, "chroma_db_sent")
+# print("\n--- Using Sentence-based Splitting ---")
+# sent_splitter = SentenceTransformersTokenTextSplitter(chunk_size=1000)
+# sent_docs = sent_splitter.split_documents(documents)
+# create_vector_store(sent_docs, "chroma_db_sent")
 
 # 3. Token-based Splitting
 # Splits text into chunks based on tokens (words or subwords), using tokenizers like GPT-2.
-# Useful for transformer models with strict token limits.
-print("\n--- Using Token-based Splitting ---")
-token_splitter = TokenTextSplitter(chunk_overlap=0, chunk_size=512)
-token_docs = token_splitter.split_documents(documents)
-create_vector_store(token_docs, "chroma_db_token")
+# # Useful for transformer models with strict token limits.
+# print("\n--- Using Token-based Splitting ---")
+# token_splitter = TokenTextSplitter(chunk_overlap=0, chunk_size=512)
+# token_docs = token_splitter.split_documents(documents)
+# create_vector_store(token_docs, "chroma_db_token")
 
 # 4. Recursive Character-based Splitting
 # Attempts to split text at natural boundaries (sentences, paragraphs) within character limit.
 # Balances between maintaining coherence and adhering to character limits.
-print("\n--- Using Recursive Character-based Splitting ---")
-rec_char_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000, chunk_overlap=100)
-rec_char_docs = rec_char_splitter.split_documents(documents)
-create_vector_store(rec_char_docs, "chroma_db_rec_char")
+# print("\n--- Using Recursive Character-based Splitting ---")
+# rec_char_splitter = RecursiveCharacterTextSplitter(
+#     chunk_size=1000, chunk_overlap=100)
+# rec_char_docs = rec_char_splitter.split_documents(documents)
+# create_vector_store(rec_char_docs, "chroma_db_rec_char")
 
 # 5. Custom Splitting
 # Allows creating custom splitting logic based on specific requirements.
 # Useful for documents with unique structure that standard splitters can't handle.
-print("\n--- Using Custom Splitting ---")
+# print("\n--- Using Custom Splitting ---")
 
 
-class CustomTextSplitter(TextSplitter):
-    def split_text(self, text):
-        # Custom logic for splitting text
-        return text.split("\n\n")  # Example: split by paragraphs
+# class CustomTextSplitter(TextSplitter):
+#     def split_text(self, text):
+#         # Custom logic for splitting text
+#         return text.split("\n\n")  # Example: split by paragraphs
 
 
-custom_splitter = CustomTextSplitter()
-custom_docs = custom_splitter.split_documents(documents)
-create_vector_store(custom_docs, "chroma_db_custom")
+# custom_splitter = CustomTextSplitter()
+# custom_docs = custom_splitter.split_documents(documents)
+# create_vector_store(custom_docs, "chroma_db_custom")
 
 
 # Function to query a vector store
@@ -124,7 +125,7 @@ query = "How did Juliet die?"
 
 # Query each vector store
 query_vector_store("chroma_db_char", query)
-query_vector_store("chroma_db_sent", query)
-query_vector_store("chroma_db_token", query)
-query_vector_store("chroma_db_rec_char", query)
-query_vector_store("chroma_db_custom", query)
+# query_vector_store("chroma_db_sent", query)
+# query_vector_store("chroma_db_token", query)
+# query_vector_store("chroma_db_rec_char", query)
+# query_vector_store("chroma_db_custom", query)

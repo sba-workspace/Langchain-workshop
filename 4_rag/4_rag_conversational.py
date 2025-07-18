@@ -3,22 +3,34 @@ import os
 from dotenv import load_dotenv
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores.chroma import Chroma
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from pydantic import SecretStr
+
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Load environment variables from .env
 load_dotenv()
+google_api_key = os.getenv("GOOGLE_API_KEY")
+if not google_api_key:
+    raise ValueError("Google API key not found. Please set it in the .env file.")
+
+os.environ["LANGSMITH_TRACING"] = "true"
+os.environ["LANGSMITH_API_KEY"] = os.getenv("LANGSMITH_API_KEY", "")
+
+# Create a SecretStr object for the API key
+secret_key = SecretStr(google_api_key)
 
 # Define the persistent directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 persistent_directory = os.path.join(current_dir, "db", "chroma_db_with_metadata")
 
 # Define the embedding model
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-exp-03-07")
 
-# Load the existing vector store with the embedding function
+
 db = Chroma(persist_directory=persistent_directory, embedding_function=embeddings)
 
 # Create a retriever for querying the vector store
@@ -29,18 +41,19 @@ retriever = db.as_retriever(
     search_kwargs={"k": 3},
 )
 
-# Create a ChatOpenAI model
-llm = ChatOpenAI(model="gpt-4o")
+# Create a ChatGoogleGenerativeAI model
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash", 
+    api_key=google_api_key,  
+    temperature=0.3
+)
 
 # Contextualize question prompt
 # This system prompt helps the AI understand that it should reformulate the question
 # based on the chat history to make it a standalone question
 contextualize_q_system_prompt = (
-    "Given a chat history and the latest user question "
-    "which might reference context in the chat history, "
-    "formulate a standalone question which can be understood "
-    "without the chat history. Do NOT answer the question, just "
-    "reformulate it if needed and otherwise return it as is."
+    "you are to chat with the user as if you are a friend while answering their questions if needed"
+    "greet them when you see them for the first time and follow up in the same message with their query"
 )
 
 # Create a prompt template for contextualizing questions
@@ -63,7 +76,7 @@ history_aware_retriever = create_history_aware_retriever(
 # based on the retrieved context and indicates what to do if the answer is unknown
 qa_system_prompt = (
     "You are an assistant for question-answering tasks. Use "
-    "the following pieces of retrieved context to answer the "
+    "the following pieces of retrieved context(or not) to answer the "
     "question. If you don't know the answer, just say that you "
     "don't know. Use three sentences maximum and keep the answer "
     "concise."

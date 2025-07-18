@@ -2,13 +2,12 @@ from dotenv import load_dotenv
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableBranch
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import GoogleGenerativeAI
 
 # Load environment variables from .env
 load_dotenv()
 
-# Create a ChatOpenAI model
-model = ChatOpenAI(model="gpt-4o")
+model = GoogleGenerativeAI(model="gemini-1.5-flash")
 
 # Define prompt templates for different feedback types
 positive_feedback_template = ChatPromptTemplate.from_messages(
