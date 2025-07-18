@@ -1,0 +1,1 @@
+Tutorial project for Langchain crash course
