@@ -1,0 +1,23 @@
+# LangChain Crash Course Dependencies
+
+# Python version constraint (not supported directly in requirements.txt)
+# Python >=3.10.0, <=3.12.2
+
+langchain
+langchain-ollama==0.3.5
+langchain-google-genai==2.1.8
+langchain-groq==0.3.6
+python-dotenv==1.0.1
+firestore==0.0.8
+tiktoken==0.7.0
+beautifulsoup4==4.12.3   # bs4 maps to beautifulsoup4 (latest stable version here; bs4==0.0.2 is just a shim, better to use real package)
+firecrawl-py==0.0.13
+langchainhub==0.1.18
+wikipedia==1.4.0
+tavily-python==0.3.3
+langchain-huggingface==0.3.0
+langchain-chroma==0.2.4
+langchain-text-splitters==0.3.8
+langgraph==0.5.3
+langchain-openai==0.3.28
+pymupdf==1.26.3
